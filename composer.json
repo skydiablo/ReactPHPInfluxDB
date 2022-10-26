@@ -1,0 +1,22 @@
+{
+  "name": "skydiablo/reactphp-influxdb",
+  "description": "reactPHP client for InfluxDB",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "SkyDiablo\\ReactphpInfluxDB\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Volker von Hoeßlin",
+      "email": "skydiablo@gmx.net"
+    }
+  ],
+  "require": {
+    "php": "^8.1",
+    "react/http": "^1.8",
+    "clue/reactphp-csv": "^1.2"
+  }
+}
