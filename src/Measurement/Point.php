@@ -71,7 +71,7 @@ class Point
      * @param string $value
      * @return Point
      */
-    public function addField(string $key, string $value): static
+    public function addField(string $key, int|float|bool|string $value): static
     {
         $this->fields[$key] = $value;
         return $this;
