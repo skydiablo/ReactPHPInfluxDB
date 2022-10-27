@@ -23,7 +23,7 @@ class PointWriter
 
     /**
      * @param array<Point> $points
-     * @return \React\Promise\PromiseInterface
+     * @return \React\Promise\PromiseInterface<bool>
      */
     public function __invoke(array $points): \React\Promise\PromiseInterface
     {
@@ -37,7 +37,9 @@ class PointWriter
             $data = implode("\n", array_map(fn(Point $point) => $point->toLineProtocol(), $tpGroup));
             $results[] = $this->client->post($data, self::BASE_ENDPOINT, ["precision" => $precision->value]);
         }
-        return any($results);
+        return any($results)->then(function (Response $response) {
+            return StatusCodeInterface::STATUS_NO_CONTENT === $response->getStatusCode();
+        });
     }
 
 }
