@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace SkyDiablo\ReactphpInfluxDB\InfluxDB;
+namespace SkyDiablo\ReactphpInfluxDB;
 
 use React\Http\Browser as HttpClient;
 

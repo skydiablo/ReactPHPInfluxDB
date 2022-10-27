@@ -8,7 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use React\Promise\Deferred;
 use React\Stream\ReadableStreamInterface;
 use React\Stream\ThroughStream;
-use SkyDiablo\ReactphpInfluxDB\InfluxDB\Client;
+use SkyDiablo\ReactphpInfluxDB\Client;
 
 class FluxQuery
 {

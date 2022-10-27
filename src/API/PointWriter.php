@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace SkyDiablo\ReactphpInfluxDB\API;
 
-use SkyDiablo\ReactphpInfluxDB\InfluxDB\Client;
+use Fig\Http\Message\StatusCodeInterface;
+use RingCentral\Psr7\Response;
+use SkyDiablo\ReactphpInfluxDB\Client;
 use SkyDiablo\ReactphpInfluxDB\Measurement\Point;
 use SkyDiablo\ReactphpInfluxDB\Measurement\WritePrecision;
 use function React\Promise\any;
