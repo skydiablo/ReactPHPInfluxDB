@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 use SkyDiablo\ReactphpInfluxDB\API\PointWriter;
-use SkyDiablo\ReactphpInfluxDB\InfluxDB\Client;
+use SkyDiablo\ReactphpInfluxDB\Client;
 use SkyDiablo\ReactphpInfluxDB\Measurement\Point;
 
 require __DIR__ . '/../vendor/autoload.php';

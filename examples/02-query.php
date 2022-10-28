@@ -2,7 +2,8 @@
 declare(strict_types=1);
 
 
-use SkyDiablo\ReactphpInfluxDB\InfluxDB\Client;
+use SkyDiablo\ReactphpInfluxDB\API\FluxQuery;
+use SkyDiablo\ReactphpInfluxDB\Client;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -13,7 +14,7 @@ $client = new Client(
     'XXXXXXXXXXXX'
 );
 
-$query = new \SkyDiablo\ReactphpInfluxDB\API\FluxQuery($client);
+$query = new FluxQuery($client);
 
 $flux = "from(bucket: \"{$client->getBucket()}\")
     |> range(start: 0)
