@@ -33,7 +33,7 @@ class Point
         WritePrecision $precision = WritePrecision::S
     )
     {
-        $this->setName($name);
+        $this->name($name);
         $this->tags = $tags;
         $this->fields = $fields;
         $this->time = $time;
@@ -44,7 +44,7 @@ class Point
      * @param string $name
      * @return Point
      */
-    public function setName(string $name): Point
+    public function name(string $name): Point
     {
         $this->name = $name;
         return $this;
