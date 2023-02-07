@@ -75,10 +75,16 @@ class Point
         return $this;
     }
 
+    public function addTags(array $tags): static
+    {
+        $this->tags = $tags + $this->tags;
+        return $this;
+    }
+
     /** Adds or replaces a field value for a point.
      *
      * @param string $key
-     * @param string $value
+     * @param int|float|bool|string $value
      * @return Point
      */
     public function addField(string $key, int|float|bool|string $value): static
