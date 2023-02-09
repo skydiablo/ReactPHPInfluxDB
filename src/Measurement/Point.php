@@ -150,46 +150,61 @@ class Point
 
     private function appendTags(): ?string
     {
-        return $this->appendItems((array)$this->tags);
+        $tags = '';
+
+        if ($this->tags == null) {
+            return null;
+        }
+
+        ksort($this->tags);
+
+        foreach (array_keys($this->tags) as $key) {
+            $value = $this->tags[$key];
+
+            if ($this->isNullOrEmptyString($key) || $this->isNullOrEmptyString($value)) {
+                continue;
+            }
+
+            $tags .= ',' . $this->escapeKey($key) . '=' . $this->escapeKey($value);
+        }
+
+        $tags .= ' ';
+        return $tags;
     }
 
     private function appendFields(): ?string
     {
-        return $this->appendItems((array)$this->fields);
-    }
+        $fields = '';
 
-    private function appendItems(array $items): ?string
-    {
-        $result = '';
-
-        if (empty($items)) {
+        if ($this->fields == null) {
             return null;
         }
 
-        ksort($items);
+        ksort($this->fields);
 
-        foreach ($items as $key => $value) {
+        foreach (array_keys($this->fields) as $key) {
+            $value = $this->fields[$key];
 
             if (!isset($value)) {
                 continue;
             }
 
-            $result .= $this->escapeKey($key) . '=';
+            $fields .= $this->escapeKey($key) . '=';
 
             if (is_integer($value) || is_long($value)) {
-                $result .= $value . 'i';
+                $fields .= $value . 'i';
             } elseif (is_string($value)) {
-                $result .= '"' . $this->escapeValue($value) . '"';
+                $fields .= '"' . $this->escapeValue($value) . '"';
             } elseif (is_bool($value)) {
-                $result .= $value ? 'true' : 'false';
+                $fields .= $value ? 'true' : 'false';
             } else {
-                $result .= $value;
+                $fields .= $value;
             }
 
-            $result .= ',';
+            $fields .= ',';
         }
 
-        return rtrim($result, ',');
+        return rtrim($fields, ',');
     }
 
     private function appendTime(): ?string
