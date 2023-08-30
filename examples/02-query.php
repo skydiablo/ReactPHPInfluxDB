@@ -21,4 +21,4 @@ $flux = "from(bucket: \"{$client->getBucket()}\")
     |> filter(fn: (r) => r[\"_measurement\"] == \"mem\")
     |> filter(fn: (r) => r[\"host\"] == \"aws_europe\")
     |> count()";
-$query('')->then(fn($data) => var_dump($data));
+$query($flux)->then(fn($data) => var_dump($data));
