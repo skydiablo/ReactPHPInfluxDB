@@ -50,7 +50,9 @@ class FluxQuery
         /** @var ReadableStreamInterface $body */
         $body = $response->getBody();
         $body = $body->pipe(new ThroughStream(function (string $raw) {
-            return trim(preg_replace('/^#.*$/m', '', $raw)); //remove comment lines
+            $raw = preg_replace('/^#.*$/m', '', $raw); //remove comment lines
+            $raw = str_replace("\r\n\r\n", "\r\n", $raw); //remove double line breaks
+            return $raw;
         }));
 
         /** @var ReadableStreamInterface $body */
