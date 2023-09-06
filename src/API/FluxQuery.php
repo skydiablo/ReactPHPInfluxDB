@@ -5,6 +5,7 @@ namespace SkyDiablo\ReactphpInfluxDB\API;
 
 use Clue\React\Csv\AssocDecoder;
 use Psr\Http\Message\ResponseInterface;
+use React\Http\Message\ResponseException;
 use React\Promise\Deferred;
 use React\Stream\ReadableStreamInterface;
 use React\Stream\ThroughStream;
@@ -39,6 +40,20 @@ class FluxQuery
     {
         return $this->client->post($flux, self::BASE_ENDPOINT, [], $this->defaultHeader())->then(function (ResponseInterface $response) {
             return $this->parseResponse($response);
+        }, function (\Throwable $e) {
+            if($e instanceof ResponseException) {
+                $deferred = new Deferred();
+                $buffer = '';
+                $e->getResponse()->getBody()->on('data', function ($data) use (&$buffer) {
+                    $buffer .= $data;
+                })->on('end', function () use ($deferred, &$buffer, $e) {
+                    $decoded = json_decode($buffer, true);
+                    $deferred->reject(new \RuntimeException($decoded['message'] ?? $buffer, $e->getResponse()->getStatusCode(), $e));
+                });
+                return $deferred->promise();
+            } else {
+                throw $e;
+            }
         });
     }
 
