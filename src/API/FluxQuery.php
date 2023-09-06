@@ -64,9 +64,12 @@ class FluxQuery
 
         /** @var ReadableStreamInterface $body */
         $body = $response->getBody();
+
+        //prepare and cleanup response from InfluxDB
         $body = $body->pipe(new ThroughStream(function (string $raw) {
             $raw = preg_replace('/^#.*$/m', '', $raw); //remove comment lines
             $raw = str_replace("\r\n\r\n", "\r\n", $raw); //remove double line breaks
+            $raw = $raw === "\r\n" ? '' : $raw; //remove empty line
             return $raw;
         }));
 
