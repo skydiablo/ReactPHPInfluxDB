@@ -10,6 +10,7 @@ use React\Promise\Deferred;
 use React\Stream\ReadableStreamInterface;
 use React\Stream\ThroughStream;
 use SkyDiablo\ReactphpInfluxDB\Client;
+use function React\Promise\resolve;
 
 class FluxQuery
 {
@@ -41,7 +42,7 @@ class FluxQuery
         return $this->client->post($flux, self::BASE_ENDPOINT, [], $this->defaultHeader())->then(function (ResponseInterface $response) {
             return $this->parseResponse($response);
         }, function (\Throwable $e) {
-            if($e instanceof ResponseException) {
+            if ($e instanceof ResponseException) {
                 $deferred = new Deferred();
                 $buffer = '';
                 $e->getResponse()->getBody()->on('data', function ($data) use (&$buffer) {
@@ -64,6 +65,15 @@ class FluxQuery
 
         /** @var ReadableStreamInterface $body */
         $body = $response->getBody();
+
+        $body->on('end', function () use (&$buffer, &$csv) {
+            if(!$buffer) {
+                // InfluxDB returns empty response if no data is found,
+                // so we need to set a non-empty dummy header to prevent
+                // exception in AssocDecoder class
+                $csv->handleData(['dummy' => true]);
+            }
+        });
 
         //prepare and cleanup response from InfluxDB
         $body = $body->pipe(new ThroughStream(function (string $raw) {
