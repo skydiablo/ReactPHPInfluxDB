@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace SkyDiablo\ReactphpInfluxDB\API;
 
 use Fig\Http\Message\StatusCodeInterface;
+use React\Http\Message\ResponseException;
+use React\Promise\Deferred;
 use RingCentral\Psr7\Response;
 use SkyDiablo\ReactphpInfluxDB\Client;
 use SkyDiablo\ReactphpInfluxDB\Exceptions\WriteException;
@@ -41,8 +43,21 @@ class PointWriter
                     if (StatusCodeInterface::STATUS_NO_CONTENT === $response->getStatusCode()) {
                         return $tpGroup;
                     }
-                    throw new WriteException($tpGroup); //todo: add response to exception, see FluxQuery
+                    throw new WriteException($tpGroup);
                 })->catch(function (\Throwable $throwable) use ($tpGroup) {
+                    if ($throwable instanceof ResponseException) {
+                        $deferred = new Deferred();
+                        $buffer = '';
+                        $throwable->getResponse()->getBody()->on('data', function ($data) use (&$buffer) {
+                            $buffer .= $data;
+                        })->on('end', function () use ($deferred, &$buffer, $throwable, $tpGroup) {
+                            $decoded = json_decode($buffer, true);
+                            $deferred->reject(new WriteException($tpGroup,
+                                new \RuntimeException($decoded['message'] ?? $buffer, $throwable->getResponse()->getStatusCode(), $throwable)
+                            ));
+                        });
+                        return $deferred->promise();
+                    }
                     throw new WriteException($tpGroup, $throwable);
                 });
         }
