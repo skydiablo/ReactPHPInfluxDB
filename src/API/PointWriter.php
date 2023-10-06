@@ -6,9 +6,10 @@ namespace SkyDiablo\ReactphpInfluxDB\API;
 use Fig\Http\Message\StatusCodeInterface;
 use RingCentral\Psr7\Response;
 use SkyDiablo\ReactphpInfluxDB\Client;
+use SkyDiablo\ReactphpInfluxDB\Exceptions\WriteException;
 use SkyDiablo\ReactphpInfluxDB\Measurement\Point;
 use SkyDiablo\ReactphpInfluxDB\Measurement\WritePrecision;
-use function React\Promise\any;
+use function React\Promise\all;
 
 class PointWriter
 {
@@ -22,8 +23,8 @@ class PointWriter
     }
 
     /**
-     * @param array<Point> $points
-     * @return \React\Promise\PromiseInterface<bool>
+     * @param Point[] $points
+     * @return \React\Promise\PromiseInterface<Point[]>
      */
     public function __invoke(array $points): \React\Promise\PromiseInterface
     {
@@ -32,13 +33,21 @@ class PointWriter
         foreach ($points as $point) {
             $tpGroups[$point->getPrecision()->value][] = $point;
         }
-        foreach ($tpGroups as $key => $tpGroup) {
-            $precision = WritePrecision::from($key); // to validate only valid values
+        foreach ($tpGroups as $precisionName => $tpGroup) {
+            $precision = WritePrecision::from($precisionName); // to validate only valid values
             $data = implode("\n", array_map(fn(Point $point) => $point->toLineProtocol(), $tpGroup));
-            $results[] = $this->client->post($data, self::BASE_ENDPOINT, ["precision" => $precision->value]);
+            $results[] = $this->client->post($data, self::BASE_ENDPOINT, ["precision" => $precision->value])
+                ->then(function (Response $response) use ($tpGroup) {
+                    if (StatusCodeInterface::STATUS_NO_CONTENT === $response->getStatusCode()) {
+                        return $tpGroup;
+                    }
+                    throw new WriteException($tpGroup); //todo: add response to exception, see FluxQuery
+                })->catch(function (\Throwable $throwable) use ($tpGroup) {
+                    throw new WriteException($tpGroup, $throwable);
+                });
         }
-        return any($results)->then(function (Response $response) {
-            return StatusCodeInterface::STATUS_NO_CONTENT === $response->getStatusCode();
+        return all($results)->then(function (array $lists) {
+            return array_merge(...$lists);
         });
     }
 
