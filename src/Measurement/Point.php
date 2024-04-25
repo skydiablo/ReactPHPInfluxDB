@@ -11,29 +11,29 @@ namespace SkyDiablo\ReactphpInfluxDB\Measurement;
  */
 class Point
 {
-    private string $name;
+    private string $measurement;
     private array $tags;
     private array $fields;
     private int|float|null|\DateTimeInterface $time;
-    private WritePrecision $precision;
+    private TimePrecision $precision;
 
     /** Create DataPoint instance for specified measurement name.
      *
-     * @param string $name
+     * @param string $measurement
      * @param array $tags
      * @param array $fields
      * @param int|null $time
-     * @param WritePrecision $precision
+     * @param TimePrecision $precision
      */
     public function __construct(
-        string         $name,
+        string         $measurement,
         array          $tags = [],
         array          $fields = [],
         ?int           $time = null,
-        WritePrecision $precision = WritePrecision::S
+        TimePrecision $precision = TimePrecision::Seconds
     )
     {
-        $this->name($name);
+        $this->measurement($measurement);
         $this->tags = $tags;
         $this->fields = $fields;
         $this->time = $time;
@@ -44,23 +44,43 @@ class Point
      * @param string $name
      * @return Point
      */
-    public function name(string $name): Point
+    public function measurement(string $name): Point
     {
-        $this->name = $name;
+        $this->measurement = $name;
         return $this;
     }
 
+    public function getMeasurement(): string
+    {
+        return $this->measurement;
+    }
+
+    public function getTags(): array
+    {
+        return $this->tags;
+    }
+
+    public function getFields(): array
+    {
+        return $this->fields;
+    }
+
+    public function getTime(): float|\DateTimeInterface|int|null
+    {
+        return $this->time;
+    }
+
     /**
-     * @return WritePrecision
+     * @return TimePrecision
      */
-    public function getPrecision(): WritePrecision
+    public function getPrecision(): TimePrecision
     {
         return $this->precision;
     }
 
-    public static function measurement(string $name): static
+    public static function create(string $measurement): static
     {
-        return new Point($name);
+        return new Point($measurement);
     }
 
     /** Adds or replaces a tag value for a point.
@@ -93,22 +113,28 @@ class Point
         return $this;
     }
 
+    public function addFields(array $fields): static
+    {
+        $this->fields = $fields + $this->fields;
+        return $this;
+    }
+
     /** Updates the timestamp for the point.
      *
      * @param int|\DateTimeInterface|float|null $time
      * @return Point
      */
-    public function time(null|int|\DateTimeInterface|float $time): static
+    public function setTime(null|int|\DateTimeInterface|float $time): static
     {
         $this->time = $time;
         return $this;
     }
 
     /**
-     * @param WritePrecision $precision
+     * @param TimePrecision $precision
      * @return $this
      */
-    public function precision(WritePrecision $precision): static
+    public function precision(TimePrecision $precision): static
     {
         $this->precision = $precision;
         return $this;
@@ -118,139 +144,5 @@ class Point
      *
      * @return string|null representation of the point
      */
-    public function toLineProtocol(): ?string
-    {
-        $measurement = $this->escapeKey($this->name, false);
-        $lineProtocol = $measurement;
 
-        $tags = $this->appendTags();
-
-        if (!$this->isNullOrEmptyString($tags)) {
-            $lineProtocol .= $tags;
-        } else {
-            $lineProtocol .= ' ';
-        }
-
-        $fields = $this->appendFields();
-
-        if ($this->isNullOrEmptyString($fields)) {
-            return null;
-        }
-
-        $lineProtocol .= $fields;
-
-        $time = $this->appendTime();
-
-        if (!$this->isNullOrEmptyString($time)) {
-            $lineProtocol .= $time;
-        }
-
-        return $lineProtocol;
-    }
-
-    private function appendTags(): ?string
-    {
-        $tags = '';
-
-        if ($this->tags == null) {
-            return null;
-        }
-
-        ksort($this->tags);
-
-        foreach (array_keys($this->tags) as $key) {
-            $value = $this->tags[$key];
-
-            if ($this->isNullOrEmptyString($key) || $this->isNullOrEmptyString($value)) {
-                continue;
-            }
-
-            $tags .= ',' . $this->escapeKey($key) . '=' . $this->escapeKey($value);
-        }
-
-        $tags .= ' ';
-        return $tags;
-    }
-
-    private function appendFields(): ?string
-    {
-        $fields = '';
-
-        if ($this->fields == null) {
-            return null;
-        }
-
-        ksort($this->fields);
-
-        foreach (array_keys($this->fields) as $key) {
-            $value = $this->fields[$key];
-
-            if (!isset($value)) {
-                continue;
-            }
-
-            $fields .= $this->escapeKey($key) . '=';
-
-            if (is_integer($value) || is_long($value)) {
-                $fields .= $value . 'i';
-            } elseif (is_string($value)) {
-                $fields .= '"' . $this->escapeValue($value) . '"';
-            } elseif (is_bool($value)) {
-                $fields .= $value ? 'true' : 'false';
-            } else {
-                $fields .= $value;
-            }
-
-            $fields .= ',';
-        }
-
-        return rtrim($fields, ',');
-    }
-
-    private function appendTime(): ?string
-    {
-        if (!isset($this->time)) {
-            return null;
-        }
-
-        $time = $this->time;
-
-        if (is_double($time) || is_float($time)) {
-            $time = round($time);
-        } elseif ($time instanceof \DateTimeInterface) {
-            $seconds = $time->getTimestamp();
-
-            $time = match ($this->precision) {
-                WritePrecision::MS => strval(round($seconds) . '000'),
-                WritePrecision::S => strval($seconds),
-                WritePrecision::US => strval(round($seconds) . '000000'),
-                WritePrecision::NS => strval(round($seconds) . '000000000'),
-            };
-        }
-
-        return ' ' . $time;
-    }
-
-    private function escapeKey($key, $escapeEqual = true): string
-    {
-        $escapeKeys = array(' ' => '\\ ', ',' => '\\,', "\\" => '\\\\',
-            "\n" => '\\n', "\r" => '\\r', "\t" => '\\t');
-
-        if ($escapeEqual) {
-            $escapeKeys['='] = '\\=';
-        }
-
-        return \strtr($key, $escapeKeys);
-    }
-
-    private function escapeValue($value): string
-    {
-        $escapeValues = array('"' => '\\"', "\\" => '\\\\');
-        return \strtr($value, $escapeValues);
-    }
-
-    private function isNullOrEmptyString($str): bool
-    {
-        return (!isset($str) || trim($str) === '');
-    }
 }
