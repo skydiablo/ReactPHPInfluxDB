@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace SkyDiablo\ReactphpInfluxDB\API;
 
 use Fig\Http\Message\StatusCodeInterface;
+use Psr\Http\Message\ResponseInterface;
 use React\Http\Message\ResponseException;
 use React\Promise\Deferred;
-use RingCentral\Psr7\Response;
 use SkyDiablo\ReactphpInfluxDB\Client;
 use SkyDiablo\ReactphpInfluxDB\Exceptions\WriteException;
 use SkyDiablo\ReactphpInfluxDB\Measurement\Point;
@@ -43,7 +43,7 @@ class PointWriter
             $precision = TimePrecision::from($precisionName); // to validate only valid values
             $data = implode("\n", array_map([$this->pointToLine, 'toLine'], $tpGroup));
             $results[] = $this->client->post($data, self::BASE_ENDPOINT, ["precision" => $precision->value])
-                ->then(function (Response $response) use ($tpGroup) {
+                ->then(function (ResponseInterface $response) use ($tpGroup) {
                     if (StatusCodeInterface::STATUS_NO_CONTENT === $response->getStatusCode()) {
                         return $tpGroup;
                     }
