@@ -26,17 +26,17 @@ class Point
      * @param TimePrecision $precision
      */
     public function __construct(
-        string         $measurement,
-        array          $tags = [],
-        array          $fields = [],
-        ?int           $time = null,
-        TimePrecision $precision = TimePrecision::Seconds
+        string                            $measurement,
+        array                             $tags = [],
+        array                             $fields = [],
+        \DateTimeInterface|float|int|null $time = null,
+        TimePrecision                     $precision = TimePrecision::NanoSeconds
     )
     {
-        $this->measurement($measurement);
+        $this->setMeasurement($measurement);
         $this->tags = $tags;
         $this->fields = $fields;
-        $this->time = $time;
+        $this->setTime($time);
         $this->precision = $precision;
     }
 
@@ -44,7 +44,7 @@ class Point
      * @param string $name
      * @return Point
      */
-    public function measurement(string $name): Point
+    public function setMeasurement(string $name): Point
     {
         $this->measurement = $name;
         return $this;
@@ -65,7 +65,7 @@ class Point
         return $this->fields;
     }
 
-    public function getTime(): float|\DateTimeInterface|int|null
+    public function getTime(): ?\DateTimeInterface
     {
         return $this->time;
     }
@@ -89,13 +89,13 @@ class Point
      * @param string $value
      * @return Point
      */
-    public function addTag(string $key, string $value): static
+    public function setTag(string $key, string $value): static
     {
         $this->tags[$key] = $value;
         return $this;
     }
 
-    public function addTags(array $tags): static
+    public function setTags(array $tags): static
     {
         $this->tags = $tags + $this->tags;
         return $this;
@@ -107,15 +107,23 @@ class Point
      * @param int|float|bool|string $value
      * @return Point
      */
-    public function addField(string $key, int|float|bool|string $value): static
+    public function setField(string $key, int|float|bool|string $value): static
     {
         $this->fields[$key] = $value;
         return $this;
     }
 
-    public function addFields(array $fields): static
+    public function setFields(array $fields): static
     {
         $this->fields = $fields + $this->fields;
+        return $this;
+    }
+
+    public function unsetTag(string ...$tags): static
+    {
+        array_map(function (string $tag) {
+            unset($this->tags[$tag]);
+        }, $tags);
         return $this;
     }
 
@@ -126,7 +134,22 @@ class Point
      */
     public function setTime(null|int|\DateTimeInterface|float $time): static
     {
-        $this->time = $time;
+        switch (true) {
+            case is_null($time):
+            case $time instanceof \DateTimeInterface:
+                $this->time = $time;
+                break;
+            case is_int($time):
+            case is_float($time):
+                $time = match ($this->getPrecision()) {
+                    TimePrecision::Seconds => $time,
+                    TimePrecision::MilliSeconds => $time / 1000,
+                    TimePrecision::MicroSeconds => $time / 1000000,
+                    TimePrecision::NanoSeconds => $time / 1000000000,
+                };
+                $this->time = (new \DateTimeImmutable())->setTimezone(new \DateTimeZone('UTC'))->setTimestamp($time);
+                break;
+        }
         return $this;
     }
 
@@ -134,7 +157,7 @@ class Point
      * @param TimePrecision $precision
      * @return $this
      */
-    public function precision(TimePrecision $precision): static
+    public function setPrecision(TimePrecision $precision): static
     {
         $this->precision = $precision;
         return $this;
