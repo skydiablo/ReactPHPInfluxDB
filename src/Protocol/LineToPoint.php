@@ -45,7 +45,7 @@ class LineToPoint
         $tags = [];
         foreach ($tagsTuple as $tuple) {
             list($name, $value) = explode('=', $tuple, 2);
-            $tags[$name] = $this->stripQuotes($value);
+            $tags[$name] = $this->guessTypes($value);
         }
         return $tags;
     }
@@ -60,22 +60,39 @@ class LineToPoint
         $fields = [];
         foreach ($this->rawLineParser->parse($rawFields, ',') as $tuple) {
             list($name, $value) = explode('=', $tuple, 2);
-            if ($value === null) {
-                throw new \Exception(sprintf('Invalid Tuple: Name "%s" / Value: "%s" [raw input: "%s"]', $name, $value, $rawFields));
-            }
-            switch (true) {
-                case str_ends_with($value, 'i'):
-                    $value = (int)$value;
-                    break;
-                case is_numeric($value):
-                    $value = (float)$value;
-                    break;
-                case $value = ['t' => true, 'f' => false, 'true' => true, 'false' => false][$value] ?? $value;
-                    break;
-            }
-            $fields[$name] = $this->stripQuotes($value);
+//            if ($value === null) {
+//                throw new \Exception(sprintf('Invalid Tuple: Name "%s" / Value: "%s" [raw input: "%s"]', $name, $value, $rawFields));
+//            }
+            $fields[$name] = $this->guessTypes($value);
         }
         return $fields;
+    }
+
+    protected function guessTypes($value): mixed
+    {
+        switch (true) {
+            case str_ends_with($value, 'i') && is_numeric(substr($value, 0, -1)):
+                $value = (int)$value;
+                break;
+            case is_numeric($value):
+                $value = (float)$value;
+                break;
+            case strtoupper($value) === 'NULL':
+                $value = null;
+                break;
+            case is_array($value):
+                $value = (function (array $data) {
+                    $result = [];
+                    foreach ($data as $key => $value) {
+                        $result[$key] = $this->guessTypes($value);
+                    }
+                    return $result;
+                })($value);
+                break;
+            case $value = ['t' => true, 'f' => false, 'true' => true, 'false' => false][$value] ?? $value; //beware, have to be the last in switch case list!
+                break;
+        }
+        return is_string($value) ? $this->stripQuotes($value) : $value;
     }
 
     protected function stripQuotes(string $value): string
