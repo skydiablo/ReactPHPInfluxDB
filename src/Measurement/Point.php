@@ -40,6 +40,11 @@ class Point
         $this->precision = $precision;
     }
 
+    public static function measurement(string $measurement): static
+    {
+        return new static($measurement);
+    }
+
     /**
      * @param string $name
      * @return Point
@@ -131,6 +136,7 @@ class Point
      *
      * @param int|\DateTimeInterface|float|null $time
      * @return Point
+     * @todo: refactor to store time in a more precision format
      */
     public function setTime(null|int|\DateTimeInterface|float $time): static
     {
