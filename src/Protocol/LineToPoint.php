@@ -3,6 +3,7 @@
 namespace SkyDiablo\ReactphpInfluxDB\Protocol;
 
 use SkyDiablo\ReactphpInfluxDB\Measurement\Point;
+use SkyDiablo\ReactphpInfluxDB\Measurement\TimePrecision;
 
 class LineToPoint
 {
@@ -37,6 +38,7 @@ class LineToPoint
         return $point
             ->setTags($this->parseTagsTuple($tagsTuple))
             ->setFields($this->parseFields($rawFields))
+///            ->setPrecision(TimePrecision::MilliSeconds) // TODO: check if this is correct
             ->setTime($timestamp ? (int)$timestamp : null);
     }
 

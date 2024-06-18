@@ -36,8 +36,8 @@ class Point
         $this->setMeasurement($measurement);
         $this->tags = $tags;
         $this->fields = $fields;
-        $this->setTime($time);
         $this->precision = $precision;
+        $this->setTime($time);
     }
 
     public static function measurement(string $measurement): static
